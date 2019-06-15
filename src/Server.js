@@ -20,11 +20,11 @@ module.exports = class Server {
     });
     for (const file of g.found) {
       const method = path.resolve(file).replace(`${path.resolve(g.cwdAbs)}`, '').substr(1).replace(/Controller\.js$/, '').replace(/[\\/]/, '.');
+      const Controller = require(file);
       this.jsonrpcHandler.setHandler(method, async function (params) {
-        const Controller = require(file);
         const controller = new Controller(params);
         return await controller.run();
-      });
+      }, Controller);
     }
     return this;
   }
@@ -45,6 +45,16 @@ module.exports = class Server {
       }
       ctx.body = await this.jsonrpcHandler.handle(body);
     }));
+    app.use(route.get(path, (ctx) => {
+      const methods = this.jsonrpcHandler.getMethods();
+      const docs = {};
+      for (const methodName of Object.keys(methods)) {
+        docs[methodName] = {
+          paramsSchema: methods[methodName].context.paramsSchema && methods[methodName].context.paramsSchema()
+        };
+      }
+      ctx.body = docs;
+    }));
     app.listen(port);
   }
-}
+};
