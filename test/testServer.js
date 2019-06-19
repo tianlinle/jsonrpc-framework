@@ -1,4 +1,4 @@
-const { Server } = require('../index');
+const { Server } = require('../src/index');
 const path = require('path');
 
 const server = new Server();
