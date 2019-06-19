@@ -1,4 +1,4 @@
-const Jsonrpc = require('tian-jsonrpc');
+const { JsonRpcHandler } = require('tian-jsonrpc');
 const glob = require('glob');
 const path = require('path');
 const Koa = require('koa');
@@ -8,7 +8,8 @@ const { JsonRpcError } = require('tian-jsonrpc');
 
 module.exports = class Server {
   constructor() {
-    this.jsonrpcHandler = new Jsonrpc.JsonRpcHandler();
+    this.jsonrpcHandler = new JsonRpcHandler();
+    this.app = new Koa();
   }
 
   registerFolder(folderPath) {
@@ -21,7 +22,7 @@ module.exports = class Server {
     for (const file of g.found) {
       const method = path.resolve(file).replace(`${path.resolve(g.cwdAbs)}`, '').substr(1).replace(/Controller\.js$/, '').replace(/[\\/]/, '.');
       const Controller = require(file);
-      this.jsonrpcHandler.setHandler(method, async function (params) {
+      this.jsonrpcHandler.setMethodHandler(method, async function (params) {
         const controller = new Controller(params);
         return await controller.run();
       }, Controller);
@@ -29,12 +30,29 @@ module.exports = class Server {
     return this;
   }
 
-  startup(path, port, options = {}) {
-    const app = new Koa();
-    app.use(route.post(path, async (ctx) => {
+  use(handler) {
+    this.app.use(handler);
+    return this;
+  }
+
+  useJsonRpc(apiPath) {
+    this.app.use(route.get(apiPath, (ctx, next) => {
+      const methods = this.jsonrpcHandler.methods;
+      const docs = {};
+      for (const methodName of Object.keys(methods)) {
+        docs[methodName] = {
+          paramsSchema: methods[methodName].context.paramsSchema && methods[methodName].context.paramsSchema()
+        };
+      }
+      ctx.body = docs;
+      return next();
+    }));
+    this.app.use(route.post(apiPath, async (ctx, next) => {
       let body;
       try {
-        body = await BodyParser.json(ctx, options);
+        body = await BodyParser.json(ctx, {
+          limit: '10kb'
+        });
       } catch (error) {
         ctx.body = {
           jsonrpc: '2.0',
@@ -44,17 +62,13 @@ module.exports = class Server {
         return;
       }
       ctx.body = await this.jsonrpcHandler.handle(body);
+      await next();
     }));
-    app.use(route.get(path, (ctx) => {
-      const methods = this.jsonrpcHandler.getMethods();
-      const docs = {};
-      for (const methodName of Object.keys(methods)) {
-        docs[methodName] = {
-          paramsSchema: methods[methodName].context.paramsSchema && methods[methodName].context.paramsSchema()
-        };
-      }
-      ctx.body = docs;
-    }));
-    app.listen(port);
+    return this;
+  }
+
+  listen(port) {
+    this.app.listen(port);
+    return this;
   }
 };

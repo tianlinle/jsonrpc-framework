@@ -20,7 +20,7 @@ class ControllerBase {
     if (schema) {
       const { paramsValidator } = this.constructor;
       if (!paramsValidator.validate(schema, this.params)) {
-        throw JsonRpcError.invalidParams({
+        throw new JsonRpcError.InvalidParams({
           errorText: paramsValidator.errorsText(undefined, {
             dataVar: 'params'
           })
