@@ -7,7 +7,6 @@ server.registerFolder(path.resolve(__dirname, 'controllers'))
     console.log('before jsonrpc');
     return next();
   })
-  .useJsonRpc('/api')
   .use(function (ctx, next) {
     console.log('after jsonrpc');
     return next();

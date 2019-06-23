@@ -1,15 +1,15 @@
-const { ControllerBase } = require('../../index');
+const { ControllerBase } = require('../../src/index');
 
 module.exports = class AController extends ControllerBase {
   static paramsSchema() {
     return {
       type: 'object',
       properties: {
-        key: {
+        code: {
           type: 'string'
         }
       },
-      required: ['key']
+      required: ['code']
     };
   }
   main() {

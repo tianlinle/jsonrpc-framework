@@ -2,8 +2,9 @@ const Ajv = require('ajv');
 const { JsonRpcError } = require('tian-jsonrpc');
 
 class ControllerBase {
-  constructor(params) {
+  constructor(params, logger) {
     this.params = params;
+    this.logger = logger;
   }
 
   /**

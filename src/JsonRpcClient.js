@@ -3,8 +3,9 @@ const uuid = require('uuid/v4');
 const JsonRpcClientError = require('./JsonRpcClientError');
 
 module.exports = class JsonRpcClient {
-  constructor(url) {
+  constructor(url, logger) {
     this.url = url;
+    this.logger = logger;
   }
 
   /**
@@ -14,20 +15,40 @@ module.exports = class JsonRpcClient {
    * @param {string} [id] uuid by default
    */
   async call(method, params, id) {
-    const result = await request({
-      method: 'POST',
-      uri: this.url,
-      body: {
-        jsonrpc: '2.0',
-        id: id || uuid(),
-        method,
-        params
-      },
-      json: true
-    });
-    if (result.error) {
-      throw new JsonRpcClientError(result);
+    try {
+      this.logger && this.logger.info('request to another json-rpc server', {
+        url: this.url,
+        jsonrpc: {
+          id,
+          method,
+          params
+        }
+      });
+      const result = await request({
+        method: 'POST',
+        uri: this.url,
+        body: {
+          jsonrpc: '2.0',
+          id: id || uuid(),
+          method,
+          params
+        },
+        json: true
+      });
+      this.logger && this.logger.info('response from another json-rpc server', {
+        url: this.url,
+        result
+      });
+      if (result.error) {
+        throw new JsonRpcClientError(result);
+      }
+      return result.result;
+    } catch (error) {
+      this.logger && this.logger.error('error when request to another json-rpc server', {
+        url: this.url,
+        error
+      });
+      throw error;
     }
-    return result.result;
   }
 };

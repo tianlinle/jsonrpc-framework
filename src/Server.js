@@ -5,14 +5,16 @@ const Koa = require('koa');
 const route = require('koa-route');
 const BodyParser = require('co-body');
 const { JsonRpcError } = require('tian-jsonrpc');
+const Logger = require('./Logger');
 
 module.exports = class Server {
-  constructor() {
-    this.jsonrpcHandler = new JsonRpcHandler();
+  constructor(name) {
     this.app = new Koa();
+    this.name = name;
   }
 
-  registerFolder(folderPath) {
+  useFolder(folderPath, apiPath = '/') {
+    const jsonrpcHandler = new JsonRpcHandler();
     const g = new glob.Glob('**/*.js', {
       sync: true,
       cwd: folderPath,
@@ -22,22 +24,19 @@ module.exports = class Server {
     for (const file of g.found) {
       const method = path.resolve(file).replace(`${path.resolve(g.cwdAbs)}`, '').substr(1).replace(/Controller\.js$/, '').replace(/[\\/]/, '.');
       const Controller = require(file);
-      this.jsonrpcHandler.setMethodHandler(method, async function (params) {
-        const controller = new Controller(params);
-        return await controller.run();
+      jsonrpcHandler.setMethodHandler(method, async function (jsonrpcBody) {
+        const logger = new Logger({
+          name: this.name,
+          jsonrpcId: jsonrpcBody.id
+        });
+        logger.info('jsonrpc request', jsonrpcBody);
+        const controller = new Controller(jsonrpcBody.params, logger);
+        const result = await controller.run();
+        logger.info('jsonrpc response', result);
       }, Controller);
     }
-    return this;
-  }
-
-  use(handler) {
-    this.app.use(handler);
-    return this;
-  }
-
-  useJsonRpc(apiPath) {
     this.app.use(route.get(apiPath, (ctx, next) => {
-      const methods = this.jsonrpcHandler.methods;
+      const methods = jsonrpcHandler.methods;
       const docs = {};
       for (const methodName of Object.keys(methods)) {
         docs[methodName] = {
@@ -61,9 +60,14 @@ module.exports = class Server {
         };
         return;
       }
-      ctx.body = await this.jsonrpcHandler.handle(body);
+      ctx.body = await jsonrpcHandler.handle(body);
       await next();
     }));
+    return this;
+  }
+
+  use(handler) {
+    this.app.use(handler);
     return this;
   }
 

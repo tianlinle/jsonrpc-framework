@@ -7,8 +7,20 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch Program",
-      "program": "${workspaceFolder}\\test\\testServer.js",
+      "name": "Test Logger",
+      "program": "${workspaceFolder}/test/testLogger.js"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Test Mongodb",
+      "program": "${workspaceFolder}/test/testMongodb.js"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Test Server",
+      "program": "${workspaceFolder}/test/testServer.js",
       "outFiles": [
         "${workspaceFolder}/**/*.js"
       ]
