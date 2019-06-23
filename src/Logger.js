@@ -1,4 +1,3 @@
-const { MongoClient } = require('mongodb');
 const serializeError = require('serialize-error');
 
 /**@type {import('mongodb').Collection<{date: Date, level: string, message: string, data: any}>} */
@@ -21,9 +20,7 @@ module.exports = class Logger {
     return levelValueMap[level];
   }
 
-  static async init(uri, database, collectionName) {
-    const client = await MongoClient.connect(uri, { useNewUrlParser: true });
-    const db = client.db(database);
+  static async init(db, collectionName) {
     collection = await db.createCollection(collectionName);
     await db.command({
       collMod: collectionName,

@@ -33,6 +33,7 @@ module.exports = class Server {
         const controller = new Controller(jsonrpcBody.params, logger);
         const result = await controller.run();
         logger.info('jsonrpc response', result);
+        return result;
       }, Controller);
     }
     this.app.use(route.get(apiPath, (ctx, next) => {

@@ -7,6 +7,12 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Start Server",
+      "program": "${workspaceFolder}/src/bin/startServer.js"
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Test Logger",
       "program": "${workspaceFolder}/test/testLogger.js"
     },
