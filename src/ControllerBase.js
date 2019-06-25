@@ -1,7 +1,4 @@
-const Ajv = require('ajv');
-const { JsonRpcError } = require('tian-jsonrpc');
-
-class ControllerBase {
+module.exports = class ControllerBase {
   constructor(params, logger) {
     this.params = params;
     this.logger = logger;
@@ -15,22 +12,4 @@ class ControllerBase {
   }
 
   static paramsSchema() { }
-
-  async run() {
-    const schema = this.constructor.paramsSchema();
-    if (schema) {
-      const { paramsValidator } = this.constructor;
-      if (!paramsValidator.validate(schema, this.params)) {
-        throw new JsonRpcError.InvalidParams({
-          errorText: paramsValidator.errorsText(undefined, {
-            dataVar: 'params'
-          })
-        });
-      }
-    }
-    return await this.main();
-  }
-}
-
-ControllerBase.paramsValidator = new Ajv({ verbose: true });
-module.exports = ControllerBase;
+};
