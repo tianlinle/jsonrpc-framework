@@ -15,13 +15,24 @@ dotenv.config();
 
 (async function () {
   try {
-    const { PORT, LOGGER_DB, LOGGER_COLLECTION, DB, CONTROLLERS_PATH = 'src/controllers' } = process.env;
+    const { PORT, LOGGER_DB, LOGGER_COLLECTION, DB, CONTROLLERS_PATH = 'src/controllers', COLLECTIONS_PATH = 'src/collections' } = process.env;
     const cwd = process.cwd();
 
     //prepare db
     if (DB) {
-      await Db.init(DB);
-      console.info('connect to mongodb successfully');
+      await Db.connect(DB);
+      console.info('Connect to mongodb successfully');
+      const { found } = new glob.Glob('**/*.js', {
+        sync: true,
+        cwd: path.resolve(cwd, COLLECTIONS_PATH),
+        nodir: true,
+        realpath: true
+      });
+      for (const file of found) {
+        require(file);
+      }
+      await Db.collectionPromises;
+      console.info('Init collections successfully');
     } else {
       console.info('Missing configuration item `DB`, will not auto create connection to mongodb.');
     }
@@ -43,7 +54,7 @@ dotenv.config();
           collection.insertOne(json);
         }
       });
-      console.info('use mongodb to log');
+      console.info('Use mongodb to log');
     } else {
       console.info('Use console as logger. You can use mongodb to log by configuring LOGGER_DB and LOGGER_COLLECTION(default is Logs).');
     }
@@ -63,7 +74,7 @@ dotenv.config();
       const method = path.resolve(file).replace(`${path.resolve(cwdAbs)}`, '').substr(1).replace(/Controller\.js$/, '').replace(/[\\/]/, '.');
       const paramsSchema = Controller.paramsSchema();
       schemaMap[method] = paramsSchema;
-      console.info(`register jsonrpc method: ${method}`);
+      console.info(`Register jsonrpc method: ${method}`);
       jsonrpcHandler.setMethodHandler(method, async function (jsonrpcBody) {
         const { id, params } = jsonrpcBody;
         const controllerLogger = logger.fork({ jsonrpcId: id });
@@ -105,8 +116,8 @@ dotenv.config();
       next();
     }));
     app.listen(PORT);
-    console.info('server started');
+    console.info('Server started');
   } catch (error) {
-    console.error('error happens during starting server', error);
+    console.error('Error happens during starting server', error);
   }
 })();

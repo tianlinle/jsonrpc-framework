@@ -1,6 +1,6 @@
 {
   "name": "tian-jsonrpc-framework",
-  "version": "3.0.2",
+  "version": "4.0.0",
   "description": "A jsonrpc framework base on koa",
   "main": "src/index.js",
   "bin": {
