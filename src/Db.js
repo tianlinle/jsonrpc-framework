@@ -1,11 +1,11 @@
 const { MongoClient } = require('mongodb');
 
 module.exports = class Db {
-  static async init(uri, database) {
+  static async init(uri) {
     this.client = await MongoClient.connect(uri, {
       useNewUrlParser: true
     });
-    this.db = this.client.db(database);
+    this.db = this.client.db();
   }
 
   static async collection(name, schema) {

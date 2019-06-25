@@ -10,26 +10,37 @@ const levelValueMap = {
   error: 50
 };
 
+/**
+ * @typedef {'debug'|'info'|'warn'|'error'} Level
+ * @typedef {{name: string, level: Level, writer: Function, [key: string]: any}} Meta
+ */
 module.exports = class Logger {
-  constructor(meta = {}, level = 'info') {
+  /**
+   * Constructor
+   * @param {Meta} meta
+   */
+  constructor(meta) {
     this.meta = meta;
-    this.levelValue = Logger.getLevelValue(level);
   }
 
-  static getLevelValue(level) {
-    return levelValueMap[level];
-  }
-
-  static async init(db, collectionName) {
+  /**
+   * Connect to mongodb.
+   * @param {import('mongodb').Db} db 
+   * @param {string} collectionName 
+   */
+  static async useMongodb(db, collectionName) {
     collection = await db.createCollection(collectionName);
     await db.command({
       collMod: collectionName,
       validator: {
         $jsonSchema: {
           bsonType: 'object',
-          required: ['date', 'level', 'message'],
+          required: ['name', 'time', 'level', 'text'],
           properties: {
-            date: {
+            name: {
+              bsonType: 'string'
+            },
+            time: {
               bsonType: 'date'
             },
             level: {
@@ -45,39 +56,62 @@ module.exports = class Logger {
     });
   }
 
+  /**
+   * Fork a logger
+   * @param {Meta} meta
+   */
   fork(meta) {
     return new Logger(Object.assign({}, this.meta, meta));
   }
 
-  async write(level, message, data) {
-    const levelValue = Logger.getLevelValue(level);
-    const doc = Object.assign({
-      level: level,
-      date: new Date()
-    }, this.meta, {
-      message
-    });
-    if (data) {
-      doc.data = serializeError(data);
-    }
-    doc.text = JSON.stringify(doc);
-    if (collection && levelValue >= this.levelValue) {
-      return await collection.insertOne(doc);
+  /**
+   * Write data using logger
+   * @param {Level} level 
+   * @param {string} message 
+   * @param {Object} data 
+   */
+  write(level, message, data) {
+    if (levelValueMap[level] >= levelValueMap[this.meta.level]) {
+      const json = serializeError(Object.assign({
+        message,
+        time: new Date(),
+      }, data, this.meta));
+      if (this.meta.writer) {
+        return this.meta.writer(json);
+      } else {
+        console[level](json);
+      }
     }
   }
 
+  /**
+   * @param {string} message 
+   * @param {Object} data 
+   */
   debug(message, data) {
     return this.write('debug', message, data);
   }
 
+  /**
+   * @param {string} message 
+   * @param {Object} data 
+   */
   info(message, data) {
     return this.write('info', message, data);
   }
 
+  /**
+   * @param {string} message 
+   * @param {Object} data 
+   */
   warn(message, data) {
     return this.write('warn', message, data);
   }
 
+  /**
+   * @param {string} message 
+   * @param {Object} data 
+   */
   error(message, data) {
     return this.write('error', message, data);
   }
