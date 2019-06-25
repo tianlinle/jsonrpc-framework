@@ -39,6 +39,7 @@ dotenv.config();
       await db.command({ 'convertToCapped': collectionName, size: 1073741824 });
       logger = logger.fork({
         writer: function (json) {
+          json.text = JSON.stringify(json);
           collection.insertOne(json);
         }
       });
