@@ -1,7 +1,4 @@
-const serializeError = require('serialize-error');
-
-/**@type {import('mongodb').Collection<{date: Date, level: string, message: string, data: any}>} */
-let collection;
+const ErrorSerializer = require('./ErrorSerializer');
 
 const levelValueMap = {
   debug: 20,
@@ -24,39 +21,6 @@ module.exports = class Logger {
   }
 
   /**
-   * Connect to mongodb.
-   * @param {import('mongodb').Db} db 
-   * @param {string} collectionName 
-   */
-  static async useMongodb(db, collectionName) {
-    collection = await db.createCollection(collectionName);
-    await db.command({
-      collMod: collectionName,
-      validator: {
-        $jsonSchema: {
-          bsonType: 'object',
-          required: ['name', 'time', 'level', 'text'],
-          properties: {
-            name: {
-              bsonType: 'string'
-            },
-            time: {
-              bsonType: 'date'
-            },
-            level: {
-              bsonType: 'string'
-            },
-            text: {
-              bsonType: 'string'
-            }
-          }
-        }
-      },
-      validationLevel: 'moderate'
-    });
-  }
-
-  /**
    * Fork a logger
    * @param {Meta} meta
    */
@@ -72,10 +36,10 @@ module.exports = class Logger {
    */
   write(level, message, data) {
     if (levelValueMap[level] >= levelValueMap[this.meta.level]) {
-      const json = serializeError(Object.assign({
+      const json = Object.assign({
         message,
         time: new Date(),
-      }, data, this.meta));
+      }, JSON.parse(JSON.stringify(ErrorSerializer.serialize(data))), this.meta);
       if (this.meta.writer) {
         return this.meta.writer(json);
       } else {

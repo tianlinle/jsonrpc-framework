@@ -33,7 +33,6 @@
     "mongodb": "^3.2.7",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.7",
-    "serialize-error": "^4.1.0",
     "tian-jsonrpc": "^3.0.0",
     "uuid": "^3.3.2"
   },
