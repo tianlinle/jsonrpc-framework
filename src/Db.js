@@ -11,6 +11,8 @@ module.exports = class Db {
 
   static collection(name, schema) {
     this.collectionPromises.push((async () => {
+      // Sleep for a while to solve conflict on creating collection
+      await new Promise((resolve) => { setTimeout(() => resolve(), 1000); });
       await this.db.createCollection(name);
       await this.db.command({
         collMod: name,

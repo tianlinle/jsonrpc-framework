@@ -31,7 +31,7 @@ dotenv.config();
       for (const file of found) {
         require(file);
       }
-      await Db.collectionPromises;
+      await Promise.all(Db.collectionPromises);
       console.info('Init collections successfully');
     } else {
       console.info('Missing configuration item `DB`, will not auto create connection to mongodb.');
