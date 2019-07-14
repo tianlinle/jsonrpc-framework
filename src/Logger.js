@@ -36,10 +36,15 @@ module.exports = class Logger {
    */
   write(level, message, data) {
     if (levelValueMap[level] >= levelValueMap[this.meta.level]) {
+      data = JSON.parse(JSON.stringify(ErrorSerializer.serialize(data)));
+      if (message instanceof Object) {
+        data = Object.assign(message, data);
+        message = data.message;
+      }
       const json = Object.assign({
         message,
         time: new Date(),
-      }, JSON.parse(JSON.stringify(ErrorSerializer.serialize(data))), this.meta);
+      }, data, this.meta, { level });
       if (this.meta.writer) {
         return this.meta.writer(json);
       } else {
